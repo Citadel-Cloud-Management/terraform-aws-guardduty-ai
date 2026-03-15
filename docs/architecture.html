@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture -- terraform-aws-guardduty-ai</title>
+<style>
+  :root{--ink:#0b0c0b;--accent:#c8420a;--surface:#131413;--border:#2a2b2a;--text:#d4d4d4;--text-dim:#888;--card:#181918;--success:#2ea043;--warn:#d29922;--info:#388bfd}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"SF Mono","Cascadia Code","Fira Code",monospace;background:var(--ink);color:var(--text);line-height:1.65;padding:0}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  .container{max-width:1140px;margin:0 auto;padding:2rem 1.5rem}
+  header{border-bottom:2px solid var(--accent);padding:2.5rem 0 1.5rem;margin-bottom:2.5rem}
+  header h1{font-size:1.6rem;color:#fff;margin-bottom:.35rem}
+  header p.subtitle{color:var(--text-dim);font-size:.85rem}
+  .badge{display:inline-block;font-size:.7rem;padding:.15rem .55rem;border-radius:3px;margin-right:.4rem;margin-bottom:.3rem;border:1px solid var(--border);color:var(--text-dim)}
+  .badge--accent{border-color:var(--accent);color:var(--accent)}
+  h2{font-size:1.15rem;color:var(--accent);margin:2.5rem 0 1rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+  h3{font-size:.95rem;color:#fff;margin:1.5rem 0 .6rem}
+  p,li{font-size:.82rem}
+  ul,ol{padding-left:1.4rem;margin-bottom:1rem}li{margin-bottom:.3rem}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin-bottom:1.5rem}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1rem}
+  .card h4{font-size:.8rem;color:var(--accent);margin-bottom:.4rem}
+  .card p{font-size:.75rem;color:var(--text-dim)}
+  .card .val{font-size:1.3rem;color:#fff;font-weight:700;margin:.3rem 0}
+  .arch-diagram{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1.5rem;overflow-x:auto;margin:1rem 0 1.5rem}
+  .flow-row{display:flex;align-items:center;gap:.5rem;justify-content:center;margin-bottom:.5rem;flex-wrap:wrap}
+  .box{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:.55rem .9rem;font-size:.72rem;text-align:center;min-width:90px;color:var(--text)}
+  .box.accent{border-color:var(--accent);color:var(--accent)}
+  .arrow{color:var(--accent);font-size:.9rem;flex-shrink:0}
+  table{width:100%;border-collapse:collapse;font-size:.75rem;margin:1rem 0}
+  th,td{border:1px solid var(--border);padding:.45rem .6rem;text-align:left}
+  th{background:var(--surface);color:var(--accent);font-weight:600}
+  tr:nth-child(even){background:var(--surface)}
+  .checklist{list-style:none;padding-left:0}
+  .checklist li{padding:.35rem 0;font-size:.78rem;border-bottom:1px solid var(--border)}
+  .checklist li::before{content:"[ ] ";color:var(--accent);font-weight:700}
+  .section-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+  @media(max-width:700px){.section-grid{grid-template-columns:1fr}}
+  .code-block{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem;font-size:.73rem;overflow-x:auto;margin:.8rem 0;white-space:pre}
+  footer{border-top:1px solid var(--border);margin-top:3rem;padding:1.5rem 0;text-align:center;font-size:.7rem;color:var(--text-dim)}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>terraform-aws-guardduty-ai</h1>
+  <p class="subtitle">Architecture Reference -- AI-Enhanced Threat Detection and Automated Security Triage</p>
+  <div style="margin-top:.7rem">
+    <span class="badge badge--accent">Terraform</span>
+    <span class="badge badge--accent">AWS</span>
+    <span class="badge">GuardDuty</span>
+    <span class="badge">Security Hub</span>
+    <span class="badge">Bedrock</span>
+    <span class="badge">EventBridge</span>
+    <span class="badge">Lambda</span>
+    <span class="badge">SNS</span>
+  </div>
+</header>
+
+<!-- ─── Executive Summary ─── -->
+<h2>Executive Summary</h2>
+<p>This module deploys AWS GuardDuty with AI-enhanced threat detection. It provisions a GuardDuty detector with all six protection plans (S3, EKS, Malware, RDS, Lambda, Runtime Monitoring), an AI-powered triage pipeline that uses Amazon Bedrock (Claude 3 Sonnet) to analyze and enrich security findings, EventBridge routing for real-time event processing, SNS alerting with formatted notifications, Security Hub integration for centralized security posture, S3-based findings archival with Glacier lifecycle, and multi-account member management. Custom filter criteria allow auto-archiving of known benign patterns.</p>
+
+<!-- ─── Overview Cards ─── -->
+<h2>Overview</h2>
+<div class="cards">
+  <div class="card"><h4>Protection Plans</h4><div class="val">6</div><p>S3, EKS Audit Logs, Malware (EBS), RDS Login, Lambda Network, Runtime Monitoring (EC2/ECS/EKS)</p></div>
+  <div class="card"><h4>Required Variables</h4><div class="val">1</div><p>detector_name</p></div>
+  <div class="card"><h4>Outputs</h4><div class="val">10</div><p>Detector, Security Hub, EventBridge, Lambda, SNS, S3, CloudWatch</p></div>
+  <div class="card"><h4>AI Model</h4><div class="val">Claude 3</div><p>Bedrock-powered AI triage via Lambda (configurable model)</p></div>
+</div>
+
+<!-- ─── Architecture Diagram ─── -->
+<h2>Architecture Diagram</h2>
+<div class="arch-diagram">
+  <div class="flow-row">
+    <div class="box accent">GuardDuty Detector</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box">S3 Protection</div>
+    <div class="arrow">&amp;</div>
+    <div class="box">EKS Protection</div>
+    <div class="arrow">&amp;</div>
+    <div class="box">Malware Protection</div>
+  </div>
+  <div class="flow-row">
+    <div class="box accent">GuardDuty Detector</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box">RDS Protection</div>
+    <div class="arrow">&amp;</div>
+    <div class="box">Lambda Protection</div>
+    <div class="arrow">&amp;</div>
+    <div class="box">Runtime Monitoring</div>
+  </div>
+  <div class="flow-row">
+    <div class="box accent">GuardDuty Detector</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box">Finding Event</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box accent">EventBridge Rule</div>
+  </div>
+  <div class="flow-row">
+    <div class="box accent">EventBridge Rule</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box">SNS Topic (Formatted Alert)</div>
+    <div class="arrow">&amp;</div>
+    <div class="box accent">AI Triage Lambda</div>
+  </div>
+  <div class="flow-row">
+    <div class="box accent">AI Triage Lambda</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box">Amazon Bedrock (Claude 3)</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box">Enriched Analysis</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box accent">SNS Topic</div>
+  </div>
+  <div class="flow-row">
+    <div class="box accent">GuardDuty Detector</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box">Publishing Destination</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box accent">S3 Findings Archive</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box">Glacier (Lifecycle)</div>
+  </div>
+  <div class="flow-row">
+    <div class="box accent">GuardDuty Detector</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box">Security Hub</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box">GuardDuty Product Subscription</div>
+  </div>
+  <div class="flow-row">
+    <div class="box">Member Account 1..N</div>
+    <div class="arrow">&#8594;</div>
+    <div class="box accent">GuardDuty Detector (Administrator)</div>
+  </div>
+</div>
+
+<!-- ─── Component Breakdown ─── -->
+<h2>Component Breakdown</h2>
+<div class="section-grid">
+  <div>
+    <h3>GuardDuty Detector</h3>
+    <ul>
+      <li><strong>Detector</strong> -- Core threat detection engine with configurable publishing frequency (15min/1hr/6hr)</li>
+      <li><strong>S3 Protection</strong> -- Monitors S3 data access patterns</li>
+      <li><strong>EKS Protection</strong> -- Kubernetes audit log analysis</li>
+      <li><strong>Malware Protection</strong> -- EBS volume scanning on EC2 findings</li>
+      <li><strong>RDS Protection</strong> -- Login activity monitoring</li>
+      <li><strong>Lambda Protection</strong> -- Network activity monitoring</li>
+      <li><strong>Runtime Monitoring</strong> -- Agent management for EKS, ECS Fargate, EC2</li>
+    </ul>
+    <h3>Multi-Account</h3>
+    <ul>
+      <li><strong>Member Accounts</strong> -- Invite and manage member accounts with email notifications</li>
+      <li><strong>Custom Filters</strong> -- Auto-archive benign patterns with field-level criteria</li>
+    </ul>
+  </div>
+  <div>
+    <h3>AI Triage Pipeline</h3>
+    <ul>
+      <li><strong>EventBridge Rule</strong> -- Captures all "GuardDuty Finding" events</li>
+      <li><strong>AI Triage Lambda</strong> -- Python 3.12 function (512MB, 120s timeout)</li>
+      <li><strong>Amazon Bedrock</strong> -- Invokes Claude 3 Sonnet for finding analysis and enrichment</li>
+      <li><strong>SNS Enriched Alerts</strong> -- AI-analyzed findings published to SNS</li>
+    </ul>
+    <h3>Alerting &amp; Archival</h3>
+    <ul>
+      <li><strong>SNS Topic</strong> -- KMS-encrypted; formatted input transformer for severity/title/description</li>
+      <li><strong>S3 Findings Archive</strong> -- Versioned, encrypted bucket with Glacier lifecycle</li>
+      <li><strong>Security Hub</strong> -- Centralized findings with GuardDuty product subscription</li>
+    </ul>
+    <h3>Observability</h3>
+    <ul>
+      <li><strong>CloudWatch Logs</strong> -- Lambda execution logs with configurable retention</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ─── Data Flow ─── -->
+<h2>Data Flow</h2>
+<ol>
+  <li>GuardDuty detector continuously monitors AWS account activity across all enabled protection plans</li>
+  <li>When a threat is detected, GuardDuty generates a finding and publishes to EventBridge</li>
+  <li>EventBridge rule matches "GuardDuty Finding" events and routes to two targets</li>
+  <li>SNS target receives a formatted alert with severity, title, description, account, region, and type</li>
+  <li>AI Triage Lambda receives the raw finding, invokes Bedrock Claude 3 for analysis</li>
+  <li>Bedrock returns an AI-enriched assessment (risk evaluation, recommended remediation)</li>
+  <li>Lambda publishes the enriched analysis to the same SNS topic for unified alerting</li>
+  <li>GuardDuty exports findings to S3 via the publishing destination</li>
+  <li>S3 lifecycle transitions findings to Glacier after the configured retention period</li>
+  <li>Security Hub aggregates GuardDuty findings for compliance and posture dashboards</li>
+</ol>
+
+<!-- ─── Security Controls ─── -->
+<h2>Security Controls</h2>
+<table>
+  <tr><th>Control</th><th>Implementation</th></tr>
+  <tr><td>Comprehensive Detection</td><td>All 6 protection plans enabled by default</td></tr>
+  <tr><td>Findings Encryption</td><td>S3 bucket with SSE-KMS; denies unencrypted PutObject</td></tr>
+  <tr><td>SNS Encryption</td><td>SNS topic encrypted with alias/aws/sns</td></tr>
+  <tr><td>S3 Public Access</td><td>All public access blocked on findings bucket</td></tr>
+  <tr><td>Source Account Scoping</td><td>S3 bucket policy conditioned on aws:SourceAccount</td></tr>
+  <tr><td>Lambda Least Privilege</td><td>Separate policies for Bedrock invoke, SNS publish, GuardDuty read</td></tr>
+  <tr><td>Findings Retention</td><td>Glacier lifecycle after configurable days (default 90)</td></tr>
+  <tr><td>Security Hub Integration</td><td>Centralized security posture with auto-enabled controls</td></tr>
+  <tr><td>Multi-Account</td><td>Administrator/member model for organization-wide coverage</td></tr>
+</table>
+
+<!-- ─── Industry Adaptation ─── -->
+<h2>Industry Adaptation</h2>
+<div class="section-grid">
+  <div>
+    <h3>Enterprise Security Operations</h3>
+    <p>Enable all protection plans and AI triage. Subscribe PagerDuty/Slack to SNS for immediate incident response. Use custom filters to reduce alert fatigue on known benign patterns. Enable Security Hub for compliance dashboards.</p>
+  </div>
+  <div>
+    <h3>Financial Services</h3>
+    <p>Enable RDS protection for database login monitoring. Set finding_publishing_frequency to FIFTEEN_MINUTES. Archive to Glacier for long-term regulatory retention. Use multi-account for organizational coverage.</p>
+  </div>
+  <div>
+    <h3>Healthcare / HIPAA</h3>
+    <p>Enable S3 and Lambda protection for PHI data access monitoring. Use AI triage to prioritize findings related to data exfiltration. Ensure findings S3 bucket has strict access controls and audit logging.</p>
+  </div>
+  <div>
+    <h3>Startups / Cost-Conscious</h3>
+    <p>Start with core GuardDuty (free tier for 30 days). Disable AI triage initially (set enable_ai_triage = false). Enable protection plans incrementally. Use SNS email for simple alerting.</p>
+  </div>
+</div>
+
+<!-- ─── Production Readiness Checklist ─── -->
+<h2>Production Readiness Checklist</h2>
+<ul class="checklist">
+  <li>Confirm GuardDuty is not already enabled in the target account/region</li>
+  <li>Enable Bedrock model access for the AI triage model (if using AI triage)</li>
+  <li>Subscribe alerting endpoints (email, PagerDuty, Slack) to the SNS topic</li>
+  <li>Generate a test finding: <code>aws guardduty create-sample-findings</code></li>
+  <li>Verify AI triage Lambda executes and enriched alerts arrive via SNS</li>
+  <li>Review and tune custom filter criteria for your environment</li>
+  <li>Invite all member accounts for multi-account coverage</li>
+  <li>Verify Security Hub is receiving GuardDuty findings</li>
+  <li>Set up Glacier lifecycle policy review schedule</li>
+  <li>Configure remote Terraform state backend (S3 + DynamoDB)</li>
+  <li>Tag all resources with Environment, Team, ManagedBy</li>
+</ul>
+
+<!-- ─── Config Reference ─── -->
+<h2>Configuration Reference</h2>
+<h3>Inputs</h3>
+<table>
+  <tr><th>Name</th><th>Type</th><th>Default</th><th>Required</th><th>Description</th></tr>
+  <tr><td>detector_name</td><td>string</td><td>--</td><td>yes</td><td>Logical name for resource naming</td></tr>
+  <tr><td>enable_s3_protection</td><td>bool</td><td>true</td><td>no</td><td>Enable S3 Protection</td></tr>
+  <tr><td>enable_eks_protection</td><td>bool</td><td>true</td><td>no</td><td>Enable EKS Audit Log Monitoring</td></tr>
+  <tr><td>enable_malware_protection</td><td>bool</td><td>true</td><td>no</td><td>Enable Malware Protection for EBS</td></tr>
+  <tr><td>enable_rds_protection</td><td>bool</td><td>true</td><td>no</td><td>Enable RDS Login Activity Monitoring</td></tr>
+  <tr><td>enable_lambda_protection</td><td>bool</td><td>true</td><td>no</td><td>Enable Lambda Network Monitoring</td></tr>
+  <tr><td>enable_runtime_monitoring</td><td>bool</td><td>true</td><td>no</td><td>Enable Runtime Monitoring (EC2/ECS/EKS)</td></tr>
+  <tr><td>finding_publishing_frequency</td><td>string</td><td>FIFTEEN_MINUTES</td><td>no</td><td>Publishing frequency</td></tr>
+  <tr><td>publishing_destination_bucket</td><td>string</td><td>""</td><td>no</td><td>Existing S3 bucket (auto-created if empty)</td></tr>
+  <tr><td>filter_criteria</td><td>list(object)</td><td>[]</td><td>no</td><td>Custom GuardDuty filter configurations</td></tr>
+  <tr><td>enable_ai_triage</td><td>bool</td><td>true</td><td>no</td><td>Enable AI-powered triage via Bedrock</td></tr>
+  <tr><td>bedrock_model_id</td><td>string</td><td>anthropic.claude-3-sonnet-20240229-v1:0</td><td>no</td><td>Bedrock model for AI triage</td></tr>
+  <tr><td>enable_security_hub</td><td>bool</td><td>true</td><td>no</td><td>Enable Security Hub integration</td></tr>
+  <tr><td>sns_topic_name</td><td>string</td><td>""</td><td>no</td><td>SNS topic name (auto-generated if empty)</td></tr>
+  <tr><td>member_accounts</td><td>list(object)</td><td>[]</td><td>no</td><td>Member account configurations</td></tr>
+  <tr><td>lambda_timeout</td><td>number</td><td>120</td><td>no</td><td>Lambda timeout (seconds)</td></tr>
+  <tr><td>lambda_memory_size</td><td>number</td><td>512</td><td>no</td><td>Lambda memory (MB)</td></tr>
+  <tr><td>lambda_log_retention_days</td><td>number</td><td>30</td><td>no</td><td>CloudWatch log retention</td></tr>
+  <tr><td>findings_archive_lifecycle_days</td><td>number</td><td>90</td><td>no</td><td>Days before Glacier transition</td></tr>
+  <tr><td>tags</td><td>map(string)</td><td>{}</td><td>no</td><td>Tags for all resources</td></tr>
+</table>
+
+<h3>Outputs</h3>
+<table>
+  <tr><th>Name</th><th>Description</th></tr>
+  <tr><td>detector_id</td><td>ID of the GuardDuty detector</td></tr>
+  <tr><td>detector_arn</td><td>ARN of the GuardDuty detector</td></tr>
+  <tr><td>security_hub_arn</td><td>ARN of the Security Hub account (if enabled)</td></tr>
+  <tr><td>eventbridge_rule_arn</td><td>ARN of the EventBridge rule</td></tr>
+  <tr><td>lambda_function_arn</td><td>ARN of the AI triage Lambda (if enabled)</td></tr>
+  <tr><td>sns_topic_arn</td><td>ARN of the SNS alert topic</td></tr>
+  <tr><td>s3_bucket_arn</td><td>ARN of the findings archive bucket</td></tr>
+  <tr><td>s3_bucket_name</td><td>Name of the findings archive bucket</td></tr>
+  <tr><td>lambda_role_arn</td><td>ARN of the Lambda execution role</td></tr>
+  <tr><td>cloudwatch_log_group_name</td><td>CloudWatch log group name</td></tr>
+</table>
+
+<!-- ─── Deployment ─── -->
+<h2>Deployment</h2>
+<div class="code-block">terraform init
+terraform plan -out=tfplan
+terraform apply tfplan
+
+# Subscribe to SNS alerts
+aws sns subscribe \
+  --topic-arn &lt;sns_topic_arn&gt; \
+  --protocol email \
+  --notification-endpoint security-team@example.com
+
+# Verify detector
+aws guardduty list-detectors
+aws guardduty get-detector --detector-id &lt;detector_id&gt;
+
+# Generate test finding
+aws guardduty create-sample-findings \
+  --detector-id &lt;detector_id&gt; \
+  --finding-types "Recon:EC2/PortProbeUnprotectedPort"</div>
+
+<!-- ─── Links ─── -->
+<h2>Links</h2>
+<ul>
+  <li><a href="https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html">What is Amazon GuardDuty?</a></li>
+  <li><a href="https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_remediate.html">Remediating GuardDuty Findings</a></li>
+  <li><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector">Terraform aws_guardduty_detector</a></li>
+  <li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">Amazon Bedrock</a></li>
+</ul>
+
+<footer>
+  terraform-aws-guardduty-ai &middot; Architecture Reference &middot; Generated 2026-03-15 &middot; MIT License
+</footer>
+
+</div>
+</body>
+</html>
