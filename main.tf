@@ -2,14 +2,6 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 data "aws_partition" "current" {}
 
-locals {
-  account_id  = data.aws_caller_identity.current.account_id
-  region      = data.aws_region.current.name
-  partition   = data.aws_partition.current.partition
-  bucket_name = var.publishing_destination_bucket != "" ? var.publishing_destination_bucket : "${var.detector_name}-guardduty-findings-${local.account_id}"
-  sns_topic   = var.sns_topic_name != "" ? var.sns_topic_name : "${var.detector_name}-guardduty-alerts"
-}
-
 # ------------------------------------------------------------------------------
 # GuardDuty Detector
 # ------------------------------------------------------------------------------
@@ -120,7 +112,7 @@ resource "aws_guardduty_filter" "this" {
 # S3 Bucket for Findings Archive
 # ------------------------------------------------------------------------------
 resource "aws_s3_bucket" "findings" {
-  bucket        = local.bucket_name
+  bucket        = coalesce(var.publishing_destination_bucket, "${var.detector_name}-guardduty-findings-${data.aws_caller_identity.current.account_id}")
   force_destroy = false
 
   tags = merge(var.tags, {
@@ -184,7 +176,7 @@ resource "aws_s3_bucket_policy" "findings" {
         Resource  = aws_s3_bucket.findings.arn
         Condition = {
           StringEquals = {
-            "aws:SourceAccount" = local.account_id
+            "aws:SourceAccount" = data.aws_caller_identity.current.account_id
           }
         }
       },
@@ -196,7 +188,7 @@ resource "aws_s3_bucket_policy" "findings" {
         Resource  = "${aws_s3_bucket.findings.arn}/*"
         Condition = {
           StringEquals = {
-            "aws:SourceAccount" = local.account_id
+            "aws:SourceAccount" = data.aws_caller_identity.current.account_id
           }
         }
       },
@@ -242,7 +234,7 @@ resource "aws_securityhub_account" "this" {
 resource "aws_securityhub_product_subscription" "guardduty" {
   count = var.enable_security_hub ? 1 : 0
 
-  product_arn = "arn:${local.partition}:securityhub:${local.region}::product/aws/guardduty"
+  product_arn = "arn:${data.aws_partition.current.partition}:securityhub:${data.aws_region.current.name}::product/aws/guardduty"
 
   depends_on = [aws_securityhub_account.this]
 }
@@ -251,7 +243,7 @@ resource "aws_securityhub_product_subscription" "guardduty" {
 # SNS Topic for Alerts
 # ------------------------------------------------------------------------------
 resource "aws_sns_topic" "alerts" {
-  name = local.sns_topic
+  name = coalesce(var.sns_topic_name, "${var.detector_name}-guardduty-alerts")
 
   kms_master_key_id = "alias/aws/sns"
 
@@ -349,7 +341,7 @@ resource "aws_iam_role_policy_attachment" "ai_triage_basic" {
   count = var.enable_ai_triage ? 1 : 0
 
   role       = aws_iam_role.ai_triage_lambda[0].name
-  policy_arn = "arn:${local.partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 resource "aws_iam_role_policy" "ai_triage_bedrock" {
@@ -367,7 +359,7 @@ resource "aws_iam_role_policy" "ai_triage_bedrock" {
           "bedrock:InvokeModel",
           "bedrock:InvokeModelWithResponseStream"
         ]
-        Resource = "arn:${local.partition}:bedrock:${local.region}::foundation-model/${var.bedrock_model_id}"
+        Resource = "arn:${data.aws_partition.current.partition}:bedrock:${data.aws_region.current.name}::foundation-model/${var.bedrock_model_id}"
       }
     ]
   })
