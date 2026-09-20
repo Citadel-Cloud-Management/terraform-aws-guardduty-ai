@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 410" width="900" height="410" role="img" aria-label="terraform-aws-guardduty-ai architecture">
+<title>terraform-aws-guardduty-ai architecture</title>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748b"/></marker></defs>
+<rect width="900" height="410" fill="#ffffff"/>
+<text x="24" y="34" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="600" fill="#0f172a">terraform-aws-guardduty-ai</text>
+<text x="24" y="56" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Terraform module. Providers: aws</text>
+<rect x="24" y="80" width="260" height="300" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+<text x="38" y="104" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="600" fill="#0f172a">Inputs (20 variables)</text>
+<text x="38" y="126" font-family="Consolas,monospace" font-size="12" fill="#334155">detector_name</text>
+<text x="38" y="144" font-family="Consolas,monospace" font-size="12" fill="#334155">enable_s3_protection</text>
+<text x="38" y="162" font-family="Consolas,monospace" font-size="12" fill="#334155">enable_eks_protection</text>
+<text x="38" y="180" font-family="Consolas,monospace" font-size="12" fill="#334155">enable_malware_protection</text>
+<text x="38" y="198" font-family="Consolas,monospace" font-size="12" fill="#334155">enable_rds_protection</text>
+<text x="38" y="216" font-family="Consolas,monospace" font-size="12" fill="#334155">enable_lambda_protection</text>
+<text x="38" y="234" font-family="Consolas,monospace" font-size="12" fill="#334155">enable_runtime_monitoring</text>
+<text x="38" y="252" font-family="Consolas,monospace" font-size="12" fill="#334155">publishing_destination_bucket</text>
+<text x="38" y="270" font-family="Consolas,monospace" font-size="12" fill="#334155">finding_publishing_frequency</text>
+<text x="38" y="288" font-family="Consolas,monospace" font-size="12" fill="#334155">filter_criteria</text>
+<text x="38" y="306" font-family="Consolas,monospace" font-size="12" fill="#334155">enable_ai_triage</text>
+<text x="38" y="324" font-family="Consolas,monospace" font-size="12" fill="#334155">bedrock_model_id</text>
+<text x="38" y="342" font-family="Consolas,monospace" font-size="12" fill="#334155">+ 8 more</text>
+<rect x="320" y="80" width="300" height="300" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+<text x="334" y="104" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="600" fill="#0f172a">Resources (28)</text>
+<text x="334" y="126" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_cloudwatch_event_rule</text>
+<text x="334" y="144" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_cloudwatch_event_target x2</text>
+<text x="334" y="162" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_cloudwatch_log_group</text>
+<text x="334" y="180" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_guardduty_detector</text>
+<text x="334" y="198" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_guardduty_detector_feature x3</text>
+<text x="334" y="216" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_guardduty_filter</text>
+<text x="334" y="234" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_guardduty_member</text>
+<text x="334" y="252" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_guardduty_publishing_destination</text>
+<text x="334" y="270" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_iam_role</text>
+<text x="334" y="288" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_iam_role_policy x3</text>
+<text x="334" y="306" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_iam_role_policy_attachment</text>
+<text x="334" y="324" font-family="Consolas,monospace" font-size="12" fill="#334155">aws_lambda_function</text>
+<text x="334" y="342" font-family="Consolas,monospace" font-size="12" fill="#334155">+ 11 more</text>
+<rect x="656" y="80" width="220" height="300" rx="8" fill="#fefce8" stroke="#fde047"/>
+<text x="670" y="104" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="600" fill="#0f172a">Outputs (10)</text>
+<text x="670" y="126" font-family="Consolas,monospace" font-size="12" fill="#334155">detector_id</text>
+<text x="670" y="144" font-family="Consolas,monospace" font-size="12" fill="#334155">detector_arn</text>
+<text x="670" y="162" font-family="Consolas,monospace" font-size="12" fill="#334155">security_hub_arn</text>
+<text x="670" y="180" font-family="Consolas,monospace" font-size="12" fill="#334155">eventbridge_rule_arn</text>
+<text x="670" y="198" font-family="Consolas,monospace" font-size="12" fill="#334155">lambda_function_arn</text>
+<text x="670" y="216" font-family="Consolas,monospace" font-size="12" fill="#334155">sns_topic_arn</text>
+<text x="670" y="234" font-family="Consolas,monospace" font-size="12" fill="#334155">s3_bucket_arn</text>
+<text x="670" y="252" font-family="Consolas,monospace" font-size="12" fill="#334155">s3_bucket_name</text>
+<text x="670" y="270" font-family="Consolas,monospace" font-size="12" fill="#334155">lambda_role_arn</text>
+<text x="670" y="288" font-family="Consolas,monospace" font-size="12" fill="#334155">cloudwatch_log_group_name</text>
+<line x1="284" y1="230" x2="318" y2="230" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+<line x1="620" y1="230" x2="654" y2="230" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+</svg>
